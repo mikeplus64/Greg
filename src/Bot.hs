@@ -56,7 +56,7 @@ msgCommand :: (Command, T.Text, T.Text) -> Bot -> IO ()
 msgCommand (!cmd, !s, !args) !bot = do
     result <- run cmd (Msg s (T.strip args)) bot
     case result of
-        Right m  -> message bot m
+        Right m  -> mapM_ (message bot) (T.lines m)
         Left err -> message bot err
 
 defaultCommands :: [Command]
@@ -109,5 +109,14 @@ defaultCommands = [
                 (_, Just fortuneHandle, _, _) <- createProcess (proc "fortune" ["-s"]) { std_out = CreatePipe }
                 fortune <- T.hGetContents fortuneHandle
                 return (Right fortune)
+        },
+        Com {
+            alias = "offend",
+            desc  = "too many friends? offend someone!",
+            reqp  = Normal,
+            run   = \(Msg sr _) _ -> do
+                (_, Just fortuneHandle, _, _) <- createProcess (proc "fortune" ["-os"]) { std_out = CreatePipe }
+                fortune <- T.hGetContents fortuneHandle
+                return (Right (sr `T.append` ": " `T.append` fortune))
         }
     ]

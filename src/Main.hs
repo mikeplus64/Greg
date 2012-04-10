@@ -46,6 +46,6 @@ main = do
             _      -> case parseMessage line bot of
                 Just ms@(Msg s _) ->
                     case parseCommand ms (commands (config bot)) of
-                        Just (command, args) -> mapM_ (\m -> msgCommand (command, s, m) bot) (T.lines args)
+                        Just (command, args) -> msgCommand (command, s, args) bot
                         _                    -> addToQuotes bot ms
                 _ -> return ()
