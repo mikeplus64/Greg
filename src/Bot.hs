@@ -127,7 +127,7 @@ defaultCommands = [
             run   = \(Msg _ target) _ -> do
                 (_, Just fortuneHandle, _, _) <- createProcess (proc "fortune" ["-os"]) { std_out = CreatePipe }
                 fortune <- T.hGetContents fortuneHandle
-                return (Right (target `T.append` ": " `T.append` fortune))
+                return (Right ((if T.null target then "" else target `T.append` ": ") `T.append` fortune))
         },
         Com {
             alias = "permit",
@@ -135,6 +135,9 @@ defaultCommands = [
             reqp  = Mod,
             run   = \(Msg _ m) bot -> case T.words m of
                 [dude, newPermit] -> case reads (T.unpack newPermit) :: [(Permission, String)] of
+                    [(Normal, "")] -> do
+                        modifyMVar_ (permissions bot) $ \ps -> return $ M.delete dude ps -- delete permit as Normal is the default anyway
+                        return (Right "OK.")
                     [(p, "")] -> do
                         addToPermissions bot dude p
                         return (Right "OK.")

@@ -26,7 +26,8 @@ data BotConfig = BC {
     channel     :: Text,
     network     :: (HostName, PortID),
     commands    :: [Command],
-    quoteFile   :: String
+    quoteFile   :: String,
+    permFile    :: String
 }
 
 data Permission = 

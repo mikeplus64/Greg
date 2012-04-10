@@ -4,7 +4,7 @@ import Types
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
 import Network
-import Data.Map             (Map, fromList,empty)
+import Data.Map             (Map, empty)
 import Data.IntMap          (IntMap)
 import System.IO            (hSetBuffering, BufferMode (NoBuffering), hClose)
 import Control.Concurrent   (newMVar, takeMVar)
@@ -26,15 +26,20 @@ connect details = do
     -- join channel
     T.hPutStrLn socket_ $ "JOIN " `T.append` channel details
 
-    qf <- T.unpack <$> T.readFile (quoteFile details) 
+    qf <- T.unpack <$> T.readFile (quoteFile details) -- quotes file
+    pf <- T.unpack <$> T.readFile (permFile details)  -- permissions file
 
-    let !parsed = reads qf :: [(Map T.Text (IntMap T.Text), String)]
-        !quotez = if null parsed
-            then empty
-            else fst (head parsed)
+    let parse !f = 
+            let parsed = reads f
+            in if null parsed
+                then empty
+                else fst (head parsed) 
 
-    qs <- newMVar quotez
-    ps <- newMVar (fromList [("mikeplus32", Admin), ("mikeplus64", Admin)])
+        !quotes_  = parse qf :: Map T.Text (IntMap T.Text)
+        !permits_ = parse pf :: Map T.Text Permission
+
+    qs <- newMVar quotes_
+    ps <- newMVar permits_
 
     return Bot {
             quotes      = qs,
@@ -46,6 +51,8 @@ connect details = do
 disconnect :: Bot -> IO Bot
 disconnect bot = do
     qs <- takeMVar (quotes bot)
+    ps <- takeMVar (permissions bot)
+    writeFile (permFile  (config bot)) (show ps)
     writeFile (quoteFile (config bot)) (show qs)
     T.hPutStrLn (socket bot) "QUIT"
     hClose (socket bot)
