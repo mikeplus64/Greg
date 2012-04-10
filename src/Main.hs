@@ -16,8 +16,8 @@ myConnection = BC {
     nickname = "GREG-THE-WARRIOR",
     username = "GERG",
     realname = "CONAN",
-    channel  = "#merc-devel",
-    network  = ("irc.freenode.net", PortNumber 6667),
+    channel  = "#testing135",
+    network  = ("irc.rizon.net", PortNumber 6667),
     commands = defaultCommands
 }
 
@@ -36,9 +36,12 @@ main = do
     forever $ do
         line <- T.hGetLine (socket bot)
         T.putStrLn line
-        case parseMessage line bot of
-            Just ms@(Msg s _) ->
-                case parseCommand ms (commands (config bot)) of
-                    Just (command, args) -> msgCommand (command, s, args) bot
-                    _                    -> addToQuotes bot ms
-            _ -> return ()
+        
+        case T.take 4 line of
+            "PING" -> send bot $ "PONG " `T.append` T.drop 5 line
+            _      -> case parseMessage line bot of
+                Just ms@(Msg s _) ->
+                    case parseCommand ms (commands (config bot)) of
+                        Just (command, args) -> msgCommand (command, s, args) bot
+                        _                    -> addToQuotes bot ms
+                _ -> return ()
