@@ -4,7 +4,7 @@ import Types
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
 import Network
-import Data.Map             (Map, empty)
+import Data.Map             (Map, fromList,empty)
 import Data.IntMap          (IntMap)
 import System.IO            (hSetBuffering, BufferMode (NoBuffering), hClose)
 import Control.Concurrent   (newMVar, takeMVar)
@@ -34,7 +34,7 @@ connect details = do
             else fst (head parsed)
 
     qs <- newMVar quotez
-    ps <- newMVar empty
+    ps <- newMVar (fromList [("mikeplus32", Admin), ("mikeplus64", Admin)])
 
     return Bot {
             quotes      = qs,

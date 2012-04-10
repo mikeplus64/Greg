@@ -6,9 +6,10 @@ import qualified Data.Text.IO as T
 import qualified Data.Map    as M
 import qualified Data.IntMap as I
 import Control.Concurrent
-import Control.Arrow
+import Control.Arrow    ((&&&))
 import System.Random    (randomRIO)
 import System.Process   (createProcess, proc, CreateProcess (std_out), StdStream (..))
+import Control.Monad    (when)
 
 message :: Bot -> T.Text -> IO ()
 message !bot !str = T.hPutStrLn (socket bot) $ "PRIVMSG " `T.append` channel (config bot) `T.append` " :" `T.append` str
@@ -49,15 +50,24 @@ addToQuotes !bot (Msg !sr !mg) = modifyMVar_ (quotes bot) $ \qs -> return $ if M
 addToPermissions :: Bot -> T.Text -> Permission -> IO ()
 addToPermissions !bot !dude !permission = modifyMVar_ (permissions bot) $ \ps -> return $ M.insert dude permission ps
 
+ok :: Bot -> T.Text -> Command -> IO Bool
+ok bot dude cmd = do
+    ps <- readMVar (permissions bot)
+    case M.lookup dude ps of
+        Just p  -> return $ fromEnum p >= fromEnum (reqp cmd)
+        Nothing -> return True
+
 lookupByAlias :: T.Text -> [Command] -> Maybe Command
 lookupByAlias as cs = lookup as $ map (alias &&& id) cs
 
 msgCommand :: (Command, T.Text, T.Text) -> Bot -> IO ()
-msgCommand (!cmd, !s, !args) !bot = do
-    result <- run cmd (Msg s (T.strip args)) bot
-    case result of
-        Right m  -> mapM_ (message bot) (T.lines m)
-        Left err -> message bot err
+msgCommand (!cmd, !dude, !args) !bot = do
+    okay <- ok bot dude cmd
+    when okay $ do
+            result <- run cmd (Msg dude (T.strip args)) bot
+            case result of
+                Right m  -> mapM_ (message bot) (T.lines m)
+                Left err -> message bot err
 
 defaultCommands :: [Command]
 defaultCommands = [   
@@ -114,9 +124,21 @@ defaultCommands = [
             alias = "offend",
             desc  = "too many friends? offend someone!",
             reqp  = Normal,
-            run   = \(Msg _ sr) _ -> do
+            run   = \(Msg _ target) _ -> do
                 (_, Just fortuneHandle, _, _) <- createProcess (proc "fortune" ["-os"]) { std_out = CreatePipe }
                 fortune <- T.hGetContents fortuneHandle
-                return (Right (sr `T.append` ": " `T.append` fortune))
+                return (Right (target `T.append` ": " `T.append` fortune))
+        },
+        Com {
+            alias = "permit",
+            desc  = "get a permit",
+            reqp  = Mod,
+            run   = \(Msg _ m) bot -> case T.words m of
+                [dude, newPermit] -> case reads (T.unpack newPermit) :: [(Permission, String)] of
+                    [(p, "")] -> do
+                        addToPermissions bot dude p
+                        return (Right "OK.")
+                    _ -> return (Left "sorry dave")
+                _ -> return (Left "sorry dave")
         }
     ]
