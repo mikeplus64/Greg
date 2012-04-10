@@ -59,6 +59,7 @@ Executable Greg
         text,
         network,
         random,
+        process,
         containers
 
     other-modules:  IRC,

@@ -19,7 +19,7 @@ myConnection = BC {
     channel   = "#merc-devel",
     network   = ("irc.freenode.net", PortNumber 6667),
     commands  = defaultCommands,
-    quoteFile = "~/.greg/quotes"
+    quoteFile = "/home/opuk/.greg/quotes"
 }
 
 main :: IO ()
@@ -46,6 +46,6 @@ main = do
             _      -> case parseMessage line bot of
                 Just ms@(Msg s _) ->
                     case parseCommand ms (commands (config bot)) of
-                        Just (command, args) -> msgCommand (command, s, args) bot
+                        Just (command, args) -> mapM_ (\m -> msgCommand (command, s, m) bot) (T.lines args)
                         _                    -> addToQuotes bot ms
                 _ -> return ()

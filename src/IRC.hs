@@ -9,6 +9,7 @@ import Data.IntMap          (IntMap)
 import System.IO            (hSetBuffering, BufferMode (NoBuffering), hClose)
 import Control.Concurrent   (newMVar, takeMVar)
 import Control.Monad        ((>=>))
+import Control.Applicative  ((<$>))
 
 send :: Bot -> T.Text -> IO ()
 send = T.hPutStrLn . socket
@@ -25,8 +26,7 @@ connect details = do
     -- join channel
     T.hPutStrLn socket_ $ "JOIN " `T.append` channel details
 
-
-    qf <- readFile (quoteFile details)
+    qf <- T.unpack <$> T.readFile (quoteFile details) 
 
     let !parsed = reads qf :: [(Map T.Text (IntMap T.Text), String)]
         !quotez = if null parsed

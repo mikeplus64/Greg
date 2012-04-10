@@ -7,7 +7,8 @@ import qualified Data.Map    as M
 import qualified Data.IntMap as I
 import Control.Concurrent
 import Control.Arrow
-import System.Random (randomRIO)
+import System.Random    (randomRIO)
+import System.Process   (createProcess, proc, CreateProcess (std_out), StdStream (..))
 
 message :: Bot -> T.Text -> IO ()
 message !bot !str = T.hPutStrLn (socket bot) $ "PRIVMSG " `T.append` channel (config bot) `T.append` " :" `T.append` str
@@ -32,7 +33,7 @@ parseMessage !mg !bot = case T.breakOn expect mg of
             nh          -> Just nh
 
 parseCommand :: Message -> [Command] -> Maybe (Command, T.Text)
-parseCommand (Msg _ !m) !cmds = if fst (T.splitAt 1 m) == "!"
+parseCommand (Msg _ !m) !cmds = if fst (T.splitAt 1 m) == "~"
     then uncurry getCmd (T.breakOn " " m)
     else Nothing
   where
@@ -63,21 +64,22 @@ defaultCommands = [
         Com {
             alias = "echo",
             desc  = "echo something!",
-            run   = \m _ -> return (Right (msg m)),
-            reqp  = Mod
+            reqp  = Mod,
+            run   = \m _ -> return (Right (msg m))
         },
         Com {
             alias = "help",
             desc  = "get help bro :(",
+            reqp  = Normal,
             run   = \m b -> return $
                 case lookupByAlias (msg m) (commands (config b)) of
                     Just cmd -> Right $ desc cmd
-                    _        -> Left  "command not found",
-            reqp  = Normal
+                    _        -> Left  "command not found"
         },
         Com {
             alias = "quote",
             desc  = "get a quote!",
+            reqp  = Normal,
             run   = \m b ->
                 if T.null (msg m) 
                     then do
@@ -98,7 +100,14 @@ defaultCommands = [
                                 let quote = quoteMap I.! quoteIndex
                                 return (Right ("<" `T.append` msg m `T.append` "> " `T.append` quote))
                             Nothing       -> return (Left "YOU LOSE!")
-                ,
-            reqp  = Normal
+        },
+        Com {
+            alias = "fortune",
+            desc  = "sporadically-daily fortunes",
+            reqp  = Normal,
+            run   = \_ _ -> do
+                (_, Just fortuneHandle, _, _) <- createProcess (proc "fortune" ["-s"]) { std_out = CreatePipe }
+                fortune <- T.hGetContents fortuneHandle
+                return (Right fortune)
         }
     ]
