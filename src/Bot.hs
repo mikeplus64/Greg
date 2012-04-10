@@ -114,7 +114,7 @@ defaultCommands = [
             alias = "offend",
             desc  = "too many friends? offend someone!",
             reqp  = Normal,
-            run   = \(Msg sr _) _ -> do
+            run   = \(Msg _ sr) _ -> do
                 (_, Just fortuneHandle, _, _) <- createProcess (proc "fortune" ["-os"]) { std_out = CreatePipe }
                 fortune <- T.hGetContents fortuneHandle
                 return (Right (sr `T.append` ": " `T.append` fortune))
