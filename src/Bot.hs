@@ -143,5 +143,16 @@ defaultCommands = [
                         return (Right "OK.")
                     _ -> return (Left "sorry dave")
                 _ -> return (Left "sorry dave")
+        },
+        Com {
+            alias = "remember",
+            desc  = "remember a quote",
+            reqp  = Mod,
+            run   = \(Msg _ m) bot -> case T.breakOn " " m of
+                ("", _) -> return (Left "can't do that")
+                (_, "") -> return (Left "can't do that")
+                (dude, quote) -> do
+                    addToQuotes bot (Msg dude (T.tail quote))
+                    return (Right "OK")
         }
     ]
