@@ -4,9 +4,10 @@ import Types
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
 import Network
-import Data.Map as M        (empty)
+import Data.Map             (Map, empty)
+import Data.IntMap          (IntMap)
 import System.IO            (hSetBuffering, BufferMode (NoBuffering), hClose)
-import Control.Concurrent   (newMVar)
+import Control.Concurrent   (newMVar, takeMVar)
 import Control.Monad        ((>=>))
 
 send :: Bot -> T.Text -> IO ()
@@ -24,8 +25,16 @@ connect details = do
     -- join channel
     T.hPutStrLn socket_ $ "JOIN " `T.append` channel details
 
-    qs <- newMVar M.empty
-    ps <- newMVar M.empty
+
+    qf <- readFile (quoteFile details)
+
+    let !parsed = reads qf :: [(Map T.Text (IntMap T.Text), String)]
+        !quotez = if null parsed
+            then empty
+            else fst (head parsed)
+
+    qs <- newMVar quotez
+    ps <- newMVar empty
 
     return Bot {
             quotes      = qs,
@@ -36,6 +45,8 @@ connect details = do
 
 disconnect :: Bot -> IO Bot
 disconnect bot = do
+    qs <- takeMVar (quotes bot)
+    writeFile (quoteFile (config bot)) (show qs)
     T.hPutStrLn (socket bot) "QUIT"
     hClose (socket bot)
     return bot

@@ -13,12 +13,13 @@ import Types
 
 myConnection ::  BotConfig
 myConnection = BC {
-    nickname = "GREG-THE-WARRIOR",
-    username = "GERG",
-    realname = "CONAN",
-    channel  = "#testing135",
-    network  = ("irc.rizon.net", PortNumber 6667),
-    commands = defaultCommands
+    nickname  = "GREG-THE-WARRIOR",
+    username  = "GERG",
+    realname  = "CONAN",
+    channel   = "#merc-devel",
+    network   = ("irc.freenode.net", PortNumber 6667),
+    commands  = defaultCommands,
+    quoteFile = "~/.greg/quotes"
 }
 
 main :: IO ()
@@ -28,10 +29,13 @@ main = do
     -- extremely simple IRC client
     forkIO $ forever $ do
         line <- T.getLine
-        case ("/" `T.isPrefixOf` line, "//" `T.isPrefixOf` line) of
-            (_,  True) -> message bot (T.drop 1 line)
-            (True,  _) -> send    bot (T.drop 1 line)
-            _          -> message bot line
+        case line of
+            "/quit" -> void $ disconnect bot
+            "/QUIT" -> void $ disconnect bot
+            _ -> case ("/" `T.isPrefixOf` line, "//" `T.isPrefixOf` line) of
+                (True,  _) -> send    bot (T.drop 1 line)
+                (_,  True) -> message bot (T.drop 1 line)
+                _          -> message bot line
 
     forever $ do
         line <- T.hGetLine (socket bot)
