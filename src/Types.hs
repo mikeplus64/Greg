@@ -9,6 +9,7 @@ import System.IO            (Handle)
 
 data Message = Msg {
     sender  :: Text,
+    shost   :: Text,
     msg     :: Text
 }
 

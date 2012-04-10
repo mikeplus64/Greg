@@ -16,8 +16,8 @@ myConnection = BC {
     nickname  = "GREG-THE-WARRIOR",
     username  = "GERG",
     realname  = "CONAN",
-    channel   = "#merc-devel",
-    network   = ("irc.freenode.net", PortNumber 6667),
+    channel   = "#testing135",
+    network   = ("irc.rizon.net", PortNumber 6667),
     commands  = defaultCommands,
     quoteFile = "/home/opuk/.greg/quotes",
     permFile  = "/home/opuk/.greg/permissions"
@@ -45,8 +45,8 @@ main = do
         case T.take 4 line of
             "PING" -> send bot $ "PONG " `T.append` T.drop 5 line
             _      -> case parseMessage line bot of
-                Just ms@(Msg s _) ->
-                    case parseCommand ms (commands (config bot)) of
-                        Just (command, args) -> msgCommand (command, s, args) bot
+                Just mg ->
+                    case parseCommand mg (commands (config bot)) of
+                        Just (command, args) -> msgCommand bot mg{ msg = args } command
                         _                    -> return ()
                 _ -> return ()
