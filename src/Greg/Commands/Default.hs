@@ -10,6 +10,8 @@ import qualified Data.Text    as T
 import qualified Data.Map     as M
 import qualified Data.IntMap  as I
 
+import Data.Maybe
+
 import Greg.Types
 import Greg.Bot
 
@@ -107,9 +109,9 @@ defaultCommands = [
             reqp  = Normal,
             run   = \mg bot -> do
                 ps <- readMVar (permissions bot)
-                case M.lookup (shost mg) ps of
-                    Just p  -> success $ T.pack (show p)
-                    _       -> failure "No level found."
+                if T.null (msg mg)
+                    then maybe (failure "no level found") (success . T.pack . show) (M.lookup (sender mg) ps)
+                    else maybe (failure "no level found") (success . T.pack . show) (M.lookup (msg    mg) ps)
         }
     ]
   where

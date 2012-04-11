@@ -1,1 +1,1 @@
-fromList [("mikeplus32",Admin),("mikeplus64",Admin),("willy_suspension",Admin)]
+fromList [("mikeplus32",Admin),("mikeplus64",Admin),("rfw",Peasant),("willy_suspension",Admin)]
