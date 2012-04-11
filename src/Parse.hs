@@ -7,7 +7,17 @@ import Control.Applicative ((<$>))
 import Network
 
 data a := b = a := b
-  deriving (Show, Read)
+  deriving (Show)
+
+instance (Read a, Read b) => Read (a := b) where
+    readsPrec _ x = 
+        let w = words x
+        in case w of
+            [var, args] -> case last var of
+                ':' -> [(read (init var) := read args, "")]
+                _   -> []
+            [var, ":", args] -> [(read var := read args, "")]
+            _                -> []
 
 configure :: String -> IO BotConfig
 configure path = buildConfig <$> mkConfigRep <$> lines <$> readFile path
@@ -22,6 +32,7 @@ mkConfigRep readme = evalState (go (zip [1 :: Int ..] readme)) []
             [(s, "")] -> do
                 put (parsed ++ [s])
                 go r
+            []        -> go r -- empty line
             _         -> fail $ "invalid configuration at line " ++ show (fst statement) ++ ": " ++ snd statement
 
 buildConfig :: [BotConfigRep := Text] -> BotConfig
@@ -38,3 +49,4 @@ buildConfig conf = go conf BC {}
             CommandFile     := b -> go ls bot { commandFile = unpack b }
             QuoteFile       := b -> go ls bot { quoteFile   = unpack b }
             PermFile        := b -> go ls bot { permFile    = unpack b }
+

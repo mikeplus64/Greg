@@ -60,6 +60,7 @@ Executable Greg
         network,
         random,
         process,
+        mtl,
         containers
 
     other-modules:  IRC,
