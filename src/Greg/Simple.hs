@@ -14,11 +14,9 @@ import Greg.Bot
 import Greg.Types
 
 createBot :: String -- ^ Absolute path to Greg config.
-    -> [Command]    -- ^ Command list.
-    -> Command      -- ^ Message handler, for messages that aren't commands.
     -> IO Bot
 
-createBot path commandList msger = do
+createBot path = do
     conf <- configure path
 
     qf <- T.unpack <$> T.readFile (quoteFile conf) -- quotes file
@@ -39,8 +37,6 @@ createBot path commandList msger = do
     return Bot {
             quotes      = qs,
             permissions = ps,
-            commands    = commandList,
-            msgHandler  = msger,
             config      = conf
         }
 
@@ -70,5 +66,9 @@ monitor bot = forever $ do
             Just mg ->
                 case parseCommand mg (commands  bot) of
                     Just (command, args) -> msgCommand bot mg{ msg = args } command
-                    _                    -> msgCommand bot mg (msgHandler bot)
+                    _                    -> do
+                        r <- msgHandler bot mg bot 
+                        case r of
+                            Just m  -> message bot m
+                            Nothing -> return ()
             _ -> return ()

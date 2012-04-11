@@ -56,7 +56,7 @@ data Bot = Bot {
     quotes      :: MVar (Map Text (IntMap Text)),
     permissions :: MVar (Map Text Permission),
     commands    :: [Command],
-    msgHandler  :: Command,
+    msgHandler  :: Message -> Bot -> IO (Maybe Text),
     socket      :: Handle,
     config      :: BotConfig
 }

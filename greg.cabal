@@ -45,6 +45,21 @@ Build-type:          Simple
 -- Constraint on the version of Cabal needed to build this package.
 Cabal-version:       >=1.2
 
+Executable greg
+    hs-source-dirs:     src
+
+    extensions:         BangPatterns, OverloadedStrings
+
+    Main-is:            Main.hs
+
+    build-depends:
+        base,
+        containers,
+        mtl,
+        text,
+        network,
+        process,
+        random  
 
 Library
     hs-source-dirs:     src
