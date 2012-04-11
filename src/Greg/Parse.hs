@@ -16,6 +16,7 @@ instance (Read a, Read b) => Read (a := b) where
             (var:args) | last var == ':' -> [(read (init var) := read (unwords args), "")]
             _                            -> []
 
+-- | Read a file, parse it, and build a 'BotConfig' out of it.
 configure :: String -> IO BotConfig
 configure path = buildConfig <$> mkConfigRep <$> lines <$> readFile path
 

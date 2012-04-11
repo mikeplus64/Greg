@@ -8,8 +8,8 @@ import Data.IntMap          (IntMap)
 import System.IO            (Handle)
 
 data Message = Msg {
-    sender  :: Text,
-    shost   :: Text,
+    sender  :: Text, -- ^ the sender's nick
+    shost   :: Text, -- ^ the sender's user@hostmask
     msg     :: Text
 }
 
@@ -43,6 +43,8 @@ data BotConfigRep =
     | PermFile
   deriving (Show, Read)
 
+-- | Permissions for commands, note that the permission required for a command, even when a user's level is 'Peasant', is entirely
+-- up to the command.
 data Permission = 
       Peasant
     | Normal

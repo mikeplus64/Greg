@@ -8,6 +8,7 @@ import System.IO            (hSetBuffering, BufferMode (NoBuffering), hClose)
 import Control.Monad        ((>=>))
 import Control.Concurrent   (takeMVar)
 
+-- | send raw IRC commands
 send :: Bot -> T.Text -> IO ()
 send = T.hPutStrLn . socket
 

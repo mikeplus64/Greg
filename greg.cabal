@@ -55,7 +55,8 @@ Library
         Greg.IRC, 
         Greg.Bot, 
         Greg.Parse, 
-        Greg.Types
+        Greg.Types,
+        Greg.Commands.Default
 
     build-depends:
         base,

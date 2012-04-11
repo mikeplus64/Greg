@@ -13,39 +13,11 @@ import Greg.IRC
 import Greg.Bot
 import Greg.Types
 
-{-
-main :: IO ()
-main = do
-    arg  <- getArgs
-    conf <- configure (if null arg then "/home/opuk/.greg/config" else head arg)
-    bot  <- connect (conf { commands = defaultCommands } )
+createBot :: String -- ^ Absolute path to Greg config.
+    -> [Command]    -- ^ Command list.
+    -> Command      -- ^ Message handler, for messages that aren't commands.
+    -> IO Bot
 
-    -- extremely simple IRC client
-    forkIO $ forever $ do
-        line <- T.getLine
-        case line of
-            "/quit" -> void $ disconnect bot
-            "/QUIT" -> void $ disconnect bot
-            _ -> case ("/" `T.isPrefixOf` line, "//" `T.isPrefixOf` line) of
-                (True,  _) -> send    bot (T.drop 1 line)
-                (_,  True) -> message bot (T.drop 1 line)
-                _          -> message bot line
-
-    forever $ do
-        line <- T.hGetLine (socket bot)
-        T.putStrLn line
-        
-        case T.take 4 line of
-            "PING" -> send bot $ "PONG " `T.append` T.drop 5 line
-            _      -> case parseMessage line bot of
-                Just mg ->
-                    case parseCommand mg (commands (config bot)) of
-                        Just (command, args) -> msgCommand bot mg{ msg = args } command
-                        _                    -> addToQuotes bot mg
-                _ -> return ()
--}
-
-createBot :: String -> [Command] -> Command -> IO Bot
 createBot path commandList msger = do
     conf <- configure path
 
@@ -73,6 +45,8 @@ createBot path commandList msger = do
         }
 
 
+-- | Extremely simple IRC client, to be used like
+-- `forkIO client` in a main function.
 client :: Bot -> IO ()
 client bot = forever $ do
     line <- T.getLine
@@ -84,6 +58,7 @@ client bot = forever $ do
             (_,  True) -> message bot (T.drop 1 line)
             _          -> message bot line
 
+-- | Monitor a 'Bot''s handle, send and receive messages, parse commands etc.
 monitor :: Bot -> IO ()
 monitor bot = forever $ do
     line <- T.hGetLine (socket bot)
