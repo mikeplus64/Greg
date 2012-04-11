@@ -80,12 +80,12 @@ defaultCommands = [
             desc  = "get a permit",
             reqp  = Mod,
             run   = \(Msg _ _ m) bot -> case T.words m of
-                [dude, newPermit] -> case reads (T.unpack newPermit) :: [(Int, String)] of
-                    [(1, "")] -> do
+                [dude, newPermit] -> case reads (T.unpack newPermit) :: [(Permission, String)] of
+                    [(Normal, "")] -> do
                         modifyMVar_ (permissions bot) $ \ps -> return $ M.delete dude ps -- delete permit as Normal is the default anyway
                         success "OK."
                     [(p, "")] -> do
-                        addToPermissions bot dude (toEnum p :: Permission)
+                        addToPermissions bot dude p
                         success "OK."
                     _ -> failure "sorry dave"
                 _ -> failure "sorry dave"

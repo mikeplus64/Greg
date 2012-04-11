@@ -50,7 +50,7 @@ data Permission =
     | Normal
     | Mod
     | Admin
-  deriving (Enum, Show, Read)
+  deriving (Ord, Eq, Show, Read)
 
 data Bot = Bot {
     quotes      :: MVar (Map Text (IntMap Text)),

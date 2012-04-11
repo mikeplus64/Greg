@@ -55,8 +55,8 @@ ok :: Bot -> T.Text -> Command -> IO Bool
 ok !bot !dude !cmd = do
     ps <- readMVar (permissions bot)
     case M.lookup dude ps of
-        Just p  -> return $ fromEnum p >= fromEnum (reqp cmd)
-        Nothing -> return True
+        Just p  -> return $ p >= reqp cmd
+        Nothing -> return $ reqp cmd == Normal 
 
 lookupByAlias :: T.Text -> [Command] -> Maybe Command
 lookupByAlias !as !cs = lookup as $ map (alias &&& id) cs
