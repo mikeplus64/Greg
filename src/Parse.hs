@@ -13,11 +13,8 @@ instance (Read a, Read b) => Read (a := b) where
     readsPrec _ x = 
         let w = words x
         in case w of
-            [var, args] -> case last var of
-                ':' -> [(read (init var) := read args, "")]
-                _   -> []
-            [var, ":", args] -> [(read var := read args, "")]
-            _                -> []
+            (var:args) | last var == ':' -> [(read (init var) := read (unwords args), "")]
+            _                            -> []
 
 configure :: String -> IO BotConfig
 configure path = buildConfig <$> mkConfigRep <$> lines <$> readFile path
