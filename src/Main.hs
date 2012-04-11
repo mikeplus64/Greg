@@ -4,28 +4,18 @@ import qualified Data.Text    as T
 
 import Control.Concurrent
 import Control.Monad
+import System.Environment (getArgs)
 
-import Network
-
+import Parse
 import IRC
 import Bot
 import Types
 
-myConnection ::  BotConfig
-myConnection = BC {
-    nickname  = "GREG-THE-WARRIOR",
-    username  = "GERG",
-    realname  = "CONAN",
-    channel   = "#testing135",
-    network   = ("irc.rizon.net", PortNumber 6667),
-    commands  = defaultCommands,
-    quoteFile = "/home/opuk/.greg/quotes",
-    permFile  = "/home/opuk/.greg/permissions"
-}
-
 main :: IO ()
 main = do
-    bot <- connect myConnection
+    arg  <- getArgs
+    conf <- configure (head arg)
+    bot  <- connect (conf { commands = defaultCommands } )
 
     -- extremely simple IRC client
     forkIO $ forever $ do

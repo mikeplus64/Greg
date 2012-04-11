@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings, BangPatterns #-}
 module Bot where
 import Types
+import IRC (send)
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
 import qualified Data.Map    as M
@@ -67,7 +68,7 @@ msgCommand !bot !mg !cmd = do
             result <- run cmd mg{msg = T.strip (msg mg)} bot
             case result of
                 Right m  -> mapM_ (message bot) (T.lines m)
-                Left err -> message bot err
+                Left err -> send bot ("NOTICE " `T.append` sender mg `T.append` " :" `T.append` err)
 
 defaultCommands :: [Command]
 defaultCommands = [   
@@ -75,16 +76,16 @@ defaultCommands = [
             alias = "echo",
             desc  = "echo something!",
             reqp  = Mod,
-            run   = \m _ -> return (Right (msg m))
+            run   = \m _ -> success $ msg m
         },
         Com {
             alias = "help",
             desc  = "get help bro :(",
             reqp  = Normal,
-            run   = \m b -> return $
+            run   = \m b ->
                 case lookupByAlias (msg m) (commands (config b)) of
-                    Just cmd -> Right $ desc cmd
-                    _        -> Left  "command not found"
+                    Just cmd -> success $ desc cmd
+                    _        -> failure "command not found"
         },
         Com {
             alias = "quote",
@@ -95,21 +96,23 @@ defaultCommands = [
                     then do
                         qs <- readMVar (quotes b)
                         if M.null qs
-                            then return (Left "No quotes available!")
+                            then failure "No quotes available!"
                             else do
                                 senderIndex <- randomRIO (0, M.size qs - 1)
                                 let (nick, quoteMap) = M.elemAt senderIndex qs
                                 quoteIndex  <- randomRIO (0, I.size quoteMap - 1)
                                 let quote = quoteMap I.! quoteIndex
-                                return (Right ("<" `T.append` nick `T.append` "> " `T.append` quote))
+                                success $ "<" `T.append` nick `T.append` "> " `T.append` quote
                     else do
                         qs <- readMVar (quotes b)
                         case M.lookup (msg m) qs of
+                            
                             Just quoteMap -> do
                                 quoteIndex <- randomRIO (0, I.size quoteMap - 1)
                                 let quote = quoteMap I.! quoteIndex
-                                return (Right ("<" `T.append` msg m `T.append` "> " `T.append` quote))
-                            Nothing       -> return (Left "YOU LOSE!")
+                                success $ "<" `T.append` msg m `T.append` "> " `T.append` quote
+                            
+                            _ -> failure "YOU LOSE!"
         },
         Com {
             alias = "fortune",
@@ -118,7 +121,7 @@ defaultCommands = [
             run   = \_ _ -> do
                 (_, Just fortuneHandle, _, _) <- createProcess (proc "fortune" ["-s"]) { std_out = CreatePipe }
                 fortune <- T.hGetContents fortuneHandle
-                return (Right fortune)
+                success fortune
         },
         Com {
             alias = "offend",
@@ -127,7 +130,7 @@ defaultCommands = [
             run   = \(Msg _ _ target) _ -> do
                 (_, Just fortuneHandle, _, _) <- createProcess (proc "fortune" ["-os"]) { std_out = CreatePipe }
                 fortune <- T.hGetContents fortuneHandle
-                return (Right ((if T.null target then "" else target `T.append` ": ") `T.append` fortune))
+                success $ (if T.null target then "" else target `T.append` ": ") `T.append` fortune
         },
         Com {
             alias = "permit",
@@ -137,12 +140,12 @@ defaultCommands = [
                 [dude, newPermit] -> case reads (T.unpack newPermit) :: [(Int, String)] of
                     [(1, "")] -> do
                         modifyMVar_ (permissions bot) $ \ps -> return $ M.delete dude ps -- delete permit as Normal is the default anyway
-                        return (Right "OK.")
+                        success "OK."
                     [(p, "")] -> do
                         addToPermissions bot dude (toEnum p :: Permission)
-                        return (Right "OK.")
-                    _ -> return (Left "sorry dave")
-                _ -> return (Left "sorry dave")
+                        success "OK."
+                    _ -> failure "sorry dave"
+                _ -> failure "sorry dave"
         },
         Com {
             alias = "remember",
@@ -153,6 +156,19 @@ defaultCommands = [
                 (_, "") -> return (Left "can't do that")
                 (dude, quote) -> do
                     addToQuotes bot (Msg dude undefined (T.tail quote))
-                    return (Right "OK")
+                    success "OK"
+        },
+        Com {
+            alias = "level",
+            desc  = "get your level!",
+            reqp  = Normal,
+            run   = \mg bot -> do
+                ps <- readMVar (permissions bot)
+                case M.lookup (shost mg) ps of
+                    Just p  -> success $ T.pack (show p)
+                    _       -> failure "No level found."
         }
     ]
+  where
+    success = return . Right
+    failure = return . Left

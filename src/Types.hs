@@ -1,7 +1,7 @@
 module Types where
 
 import Data.Text            (Text)
-import Network              (HostName, PortID)
+import Network              (HostName, PortID (..))
 import Control.Concurrent   (MVar)
 import Data.Map             (Map)
 import Data.IntMap          (IntMap)
@@ -27,12 +27,25 @@ data BotConfig = BC {
     channel     :: Text,
     network     :: (HostName, PortID),
     commands    :: [Command],
+    commandFile :: String,
     quoteFile   :: String,
     permFile    :: String
 }
 
+data BotConfigRep =
+      Nickname
+    | Username
+    | Realname
+    | Channel
+    | Network
+    | NetworkPort
+    | CommandFile
+    | QuoteFile
+    | PermFile
+  deriving (Show, Read)
+
 data Permission = 
-      None
+      Peasant
     | Normal
     | Mod
     | Admin
