@@ -65,7 +65,7 @@ lookupByAlias !as !cs = lookup as $ map (alias &&& id) cs
 -- yell at the person who called the command for an error.
 msgCommand :: Bot -> Message -> Command -> IO ()
 msgCommand !bot !mg !cmd = do
-    okay <- ok bot (shost mg) cmd
+    okay <- ok bot (sender mg) cmd
     when okay $ do
             result <- run cmd mg{msg = T.strip (msg mg)} bot
             case result of
