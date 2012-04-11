@@ -14,7 +14,7 @@ import Types
 main :: IO ()
 main = do
     arg  <- getArgs
-    conf <- configure (head arg)
+    conf <- configure (if null arg then "/home/opuk/.greg/config" else head arg)
     bot  <- connect (conf { commands = defaultCommands } )
 
     -- extremely simple IRC client
@@ -38,5 +38,5 @@ main = do
                 Just mg ->
                     case parseCommand mg (commands (config bot)) of
                         Just (command, args) -> msgCommand bot mg{ msg = args } command
-                        _                    -> return ()
+                        _                    -> addToQuotes bot mg
                 _ -> return ()
