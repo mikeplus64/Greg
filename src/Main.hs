@@ -14,7 +14,7 @@ import Types
 main :: IO ()
 main = do
     arg  <- getArgs
-    conf <- configure (head arg)
+    conf <- configure (if null arg then "/home/opuk/.greg/config" else head arg)
     bot  <- connect (conf { commands = defaultCommands } )
 
     -- extremely simple IRC client
