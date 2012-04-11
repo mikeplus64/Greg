@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Greg.Commands.Default (defaultCommands) where
+module Greg.Commands.Default (defaultCommands, success, failure) where
 
 import System.Random        (randomRIO)
 import System.Process       (createProcess, proc, CreateProcess (std_out), StdStream (..))
@@ -9,8 +9,6 @@ import qualified Data.Text.IO as T
 import qualified Data.Text    as T
 import qualified Data.Map     as M
 import qualified Data.IntMap  as I
-
-import Data.Maybe
 
 import Greg.Types
 import Greg.Bot
@@ -109,11 +107,15 @@ defaultCommands = [
             reqp  = Normal,
             run   = \mg bot -> do
                 ps <- readMVar (permissions bot)
-                if T.null (msg mg)
-                    then maybe (failure "no level found") (success . T.pack . show) (M.lookup (sender mg) ps)
-                    else maybe (failure "no level found") (success . T.pack . show) (M.lookup (msg    mg) ps)
+                maybe (success "Normal") (success . T.pack . show) (M.lookup (if T.null (msg mg) 
+                    then sender mg 
+                    else msg mg) ps)
         }
     ]
-  where
-    success = return . Right
-    failure = return . Left
+
+
+success :: a -> IO (Either b a)
+success = return . Right
+
+failure :: a -> IO (Either a b)
+failure = return . Left
