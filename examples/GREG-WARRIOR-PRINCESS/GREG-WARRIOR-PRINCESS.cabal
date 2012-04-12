@@ -47,7 +47,7 @@ Cabal-version:       >=1.2
 
 
 Executable GREG-WARRIOR-PRINCESS
-    ghc-options: -O2 -dynamic
+    ghc-options: -O2
     main-is: Main.hs
     build-depends:
         greg,
