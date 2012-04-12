@@ -28,7 +28,7 @@ parseMessage !mg !bot = case T.breakOn expect mg of
 
     parseNick !n = 
         let nickAtHost = T.init (T.tail n) -- remove :, strip end space
-        in case T.breakOn "!~" nickAtHost of
+        in case T.breakOn "!" nickAtHost of
             ("",  _)    -> Nothing
             (_ , "")    -> Nothing
             nh          -> Just nh
