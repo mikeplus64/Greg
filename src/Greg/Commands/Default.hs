@@ -31,7 +31,33 @@ defaultCommands = [
                     _        -> failure "command not found"
         },
         Com {
-            alias = "quote",
+            alias = "dementia",
+            desc  = "forget all of a person's quotes",
+            reqp  = Mod,
+            run   = \m b -> do
+                modifyMVar_ (quotes b) (return . M.delete (msg m))
+                success "OK."
+        },
+        Com {
+            alias = "quote-view",
+            desc  = "get the nth quote from someone, eg ~quote-get guy 345",
+            reqp  = Normal,
+            run   = \m b -> do
+                qs <- readMVar (quotes b)
+                let ws = T.words (msg m)
+                if length ws == 2
+                    then case M.lookup (head ws) qs of
+                            Just iqs -> case reads (T.unpack (ws !! 1)) :: [(Int, String)] of
+                                [(i, "")] -> case I.lookup i iqs of
+                                    Just q -> success q
+                                    _      -> failure "quote at this index not found"
+                                _         -> failure "cannot parse second argument"
+                            _        -> failure "this person has no quotes"
+                    else failure "bad arguments"
+        },
+        (defaultCommands !! 5) { alias = "quote" }, -- an awesome hack
+        Com {
+            alias = "rq",
             desc  = "get a quote!",
             reqp  = Normal,
             run   = \m b ->
@@ -95,8 +121,8 @@ defaultCommands = [
             desc  = "remember a quote",
             reqp  = Mod,
             run   = \(Msg _ _ m) bot -> case T.breakOn " " m of
-                ("", _) -> return (Left "can't do that")
-                (_, "") -> return (Left "can't do that")
+                ("", _) -> failure "can't do that"
+                (_, "") -> failure "can't do that"
                 (dude, quote) -> do
                     addToQuotes bot (Msg dude undefined (T.tail quote))
                     success "OK"
