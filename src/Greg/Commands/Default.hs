@@ -12,6 +12,7 @@ import qualified Data.IntMap  as I
 
 import Greg.Types
 import Greg.Bot
+import Data.Char (toUpper)
 
 defaultCommands :: [Command]
 defaultCommands = [   
@@ -40,7 +41,7 @@ defaultCommands = [
         },
         Com {
             alias = "quote-view",
-            desc  = "get the nth quote from someone, eg ~quote-get guy 345",
+            desc  = "get the nth quote from someone, eg ~quote-view guy 345",
             reqp  = Normal,
             run   = \m b -> do
                 qs <- readMVar (quotes b)
@@ -49,7 +50,7 @@ defaultCommands = [
                     then case M.lookup (head ws) qs of
                             Just iqs -> case reads (T.unpack (ws !! 1)) :: [(Int, String)] of
                                 [(i, "")] -> case I.lookup i iqs of
-                                    Just q -> success q
+                                    Just q -> success $ sender m `T.append` q
                                     _      -> failure "quote at this index not found"
                                 _         -> failure "cannot parse second argument"
                             _        -> failure "this person has no quotes"
@@ -84,6 +85,18 @@ defaultCommands = [
                             _ -> failure "YOU LOSE!"
         },
         Com {
+            alias = "visudo",
+            desc  = "grant Admin",
+            reqp  = Admin,
+            run   = \(Msg _ _ m) bot -> case T.words m of
+                [dude, newPermit] -> case reads ((\t -> let c = toUpper $ head t in c : tail t) $ T.unpack newPermit) :: [(Permission, String)] of
+                    [(p, "")] -> do
+                        addToPermissions bot dude p
+                        success "OK."
+                    _ -> failure "sorry dave"
+                _ -> failure "sorry dave"
+        },
+        Com {
             alias = "fortune",
             desc  = "sporadically-daily fortunes",
             reqp  = Normal,
@@ -107,6 +120,7 @@ defaultCommands = [
             reqp  = Mod,
             run   = \(Msg _ _ m) bot -> case T.words m of
                 [dude, newPermit] -> case reads (T.unpack newPermit) :: [(Permission, String)] of
+                    [(Admin,  "")] -> failure "sombrero"
                     [(Normal, "")] -> do
                         modifyMVar_ (permissions bot) $ \ps -> return $ M.delete dude ps -- delete permit as Normal is the default anyway
                         success "OK."
