@@ -44,8 +44,8 @@ parseCommand (Msg _ _ !m) !cmds = if fst (T.splitAt 1 m) == "~"
 addToQuotes :: Bot -> Message -> IO ()
 addToQuotes !bot (Msg !sr _ !mg) = modifyMVar_ (quotes bot) $ \qs -> return $ 
     if M.member sr qs
-        then M.adjust (|> mg) sr qs
-        else M.insert sr (singleton mg) qs
+        then M.adjust (|> T.init mg) sr qs
+        else M.insert sr (singleton (T.init mg)) qs
 
 addToPermissions :: Bot -> T.Text -> Permission -> IO ()
 addToPermissions !bot !dude !permission = modifyMVar_ (permissions bot) $ return . M.insert dude permission
