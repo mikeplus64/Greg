@@ -50,7 +50,7 @@ defaultCommands = [
                     then case M.lookup (head ws) qs of
                             Just iqs -> case reads (T.unpack (ws !! 1)) :: [(Int, String)] of
                                 [(i, "")] -> case I.lookup i iqs of
-                                    Just q -> success $ sender m `T.append` q
+                                    Just q -> success $ sender m `T.append` ": " `T.append` q
                                     _      -> failure "quote at this index not found"
                                 _         -> failure "cannot parse second argument"
                             _        -> failure "this person has no quotes"
