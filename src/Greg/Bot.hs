@@ -2,12 +2,11 @@
 module Greg.Bot where
 import Greg.Types
 import Greg.IRC (send)
-import qualified Data.Text    as T
-import qualified Data.Text.IO as T
-import qualified Data.Map    as M
-import qualified Data.IntMap as I
+import qualified Data.Text      as T
+import qualified Data.Text.IO   as T
+import qualified Data.Map       as M
+import Data.Sequence            as S ((|>), singleton)
 import Control.Concurrent
-import Control.Arrow    ((&&&))
 import Control.Monad    (when)
 
 -- | Send a message to the bot's channel.
@@ -18,8 +17,8 @@ parseMessage :: T.Text -> Bot -> Maybe Message
 parseMessage !mg !bot = case T.breakOn expect mg of
     ("",  _) -> Nothing
     (_ , "") -> Nothing
-    (talker, unparsed) -> case parseNick talker of
-        Just (nick, host) -> Just (Msg nick host (parseMsg unparsed))
+    (!talker, !unparsed) -> case parseNick talker of
+        Just (!nick, !host) -> Just (Msg nick host (parseMsg unparsed))
         _ -> Nothing
   where
     expect = "PRIVMSG " `T.append` channel (config bot) `T.append` " :"
@@ -38,17 +37,18 @@ parseCommand (Msg _ _ !m) !cmds = if fst (T.splitAt 1 m) == "~"
     then uncurry getCmd (T.breakOn " " m)
     else Nothing
   where
-    getCmd cmd args = case lookupByAlias ((T.tail . T.strip) cmd) cmds of
-            Just c  -> Just (c, args)
-            Nothing -> Nothing
+    getCmd !cmd !args = case lookupByAlias ((T.tail . T.strip) cmd) cmds of
+            Just !c  -> Just (c, args)
+            Nothing  -> Nothing
 
 addToQuotes :: Bot -> Message -> IO ()
-addToQuotes !bot (Msg !sr _ !mg) = modifyMVar_ (quotes bot) $ \qs -> return $ if M.member sr qs
-    then M.adjust (\is -> I.insert (fst (I.findMax is) + 1) mg is) sr qs
-    else M.insert sr (I.singleton 0 mg) qs
+addToQuotes !bot (Msg !sr _ !mg) = modifyMVar_ (quotes bot) $ \qs -> return $ 
+    if M.member sr qs
+        then M.adjust (|> mg) sr qs
+        else M.insert sr (singleton mg) qs
 
 addToPermissions :: Bot -> T.Text -> Permission -> IO ()
-addToPermissions !bot !dude !permission = modifyMVar_ (permissions bot) $ \ps -> return $ M.insert dude permission ps
+addToPermissions !bot !dude !permission = modifyMVar_ (permissions bot) $ return . M.insert dude permission
 
 -- | True if a user has the required level to run a command.
 ok :: Bot -> T.Text -> Command -> IO Bool
@@ -59,7 +59,9 @@ ok !bot !dude !cmd = do
         Nothing -> return $ reqp cmd == Normal 
 
 lookupByAlias :: T.Text -> [Command] -> Maybe Command
-lookupByAlias !as !cs = lookup as $ map (alias &&& id) cs
+lookupByAlias !as !cs = case [ cms | cms <- cs, alias cms == as ] of
+    (!c:_) -> Just c
+    _      -> Nothing
 
 -- | Run a command, and send the output to the channel, or
 -- yell at the person who called the command for an error.
@@ -69,5 +71,5 @@ msgCommand !bot !mg !cmd = do
     when okay $ do
             result <- run cmd mg{msg = T.strip (msg mg)} bot
             case result of
-                Right m  -> mapM_ (message bot) (T.lines m)
-                Left err -> send bot ("NOTICE " `T.append` sender mg `T.append` " :" `T.append` err)
+                Right !m   -> mapM_ (message bot) (T.lines m)
+                Left  !err -> send bot ("NOTICE " `T.append` sender mg `T.append` " :" `T.append` err)

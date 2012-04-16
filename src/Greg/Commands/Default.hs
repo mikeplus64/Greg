@@ -8,7 +8,7 @@ import Control.Concurrent   (readMVar, modifyMVar_)
 import qualified Data.Text.IO as T
 import qualified Data.Text    as T
 import qualified Data.Map     as M
-import qualified Data.IntMap  as I
+import qualified Data.Sequence as S
 
 import Greg.Types
 import Greg.Bot
@@ -48,11 +48,12 @@ defaultCommands = [
                 let ws = T.words (msg m)
                 if length ws == 2
                     then case M.lookup (head ws) qs of
+
                             Just iqs -> case reads (T.unpack (ws !! 1)) :: [(Int, String)] of
-                                [(i, "")] -> case I.lookup i iqs of
-                                    Just q -> success $ sender m `T.append` ": " `T.append` q
-                                    _      -> failure "quote at this index not found"
-                                _         -> failure "cannot parse second argument"
+                                [(i, "")] | i <= S.length iqs -> 
+                                    success $ sender m `T.append` ": " `T.append` S.index iqs i
+
+                                _    -> failure "not found"
                             _        -> failure "this person has no quotes"
                     else failure "bad arguments"
         },
@@ -69,17 +70,17 @@ defaultCommands = [
                             then failure "No quotes available!"
                             else do
                                 senderIndex <- randomRIO (0, M.size qs - 1)
-                                let (nick, quoteMap) = M.elemAt senderIndex qs
-                                quoteIndex  <- randomRIO (0, I.size quoteMap - 1)
-                                let quote = quoteMap I.! quoteIndex
+                                let (nick, quoteSeq) = M.elemAt senderIndex qs
+                                quoteIndex  <- randomRIO (0, S.length quoteSeq - 1)
+                                let quote = quoteSeq `S.index` quoteIndex
                                 success $ "<" `T.append` nick `T.append` "> " `T.append` quote
                     else do
                         qs <- readMVar (quotes b)
                         case M.lookup (msg m) qs of
                             
-                            Just quoteMap -> do
-                                quoteIndex <- randomRIO (0, I.size quoteMap - 1)
-                                let quote = quoteMap I.! quoteIndex
+                            Just quoteSeq -> do
+                                quoteIndex <- randomRIO (0, S.length quoteSeq - 1)
+                                let quote = quoteSeq `S.index` quoteIndex
                                 success $ "<" `T.append` msg m `T.append` "> " `T.append` quote
                             
                             _ -> failure "YOU LOSE!"

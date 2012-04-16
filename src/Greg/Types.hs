@@ -4,7 +4,7 @@ import Data.Text            (Text)
 import Network              (HostName, PortID (..))
 import Control.Concurrent   (MVar)
 import Data.Map             (Map)
-import Data.IntMap          (IntMap)
+import Data.Sequence        (Seq)
 import System.IO            (Handle)
 
 data Message = Msg {
@@ -53,7 +53,7 @@ data Permission =
   deriving (Ord, Eq, Show, Read)
 
 data Bot = Bot {
-    quotes      :: MVar (Map Text (IntMap Text)),
+    quotes      :: MVar (Map Text (Seq Text)),
     permissions :: MVar (Map Text Permission),
     commands    :: [Command],
     msgHandler  :: Message -> Bot -> IO (Maybe Text),

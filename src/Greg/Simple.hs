@@ -6,7 +6,7 @@ import Control.Concurrent  (newMVar)
 import Control.Applicative ((<$>))
 import Control.Monad       (forever, void)
 import Data.Map            (empty, Map)
-import Data.IntMap         (IntMap)
+import Data.Sequence       (Seq)
 
 import Greg.Parse
 import Greg.IRC
@@ -28,7 +28,7 @@ createBot path = do
                 then empty
                 else fst (head parsed) 
 
-        !quotes_  = parse qf :: Map T.Text (IntMap T.Text)
+        !quotes_  = parse qf :: Map T.Text (Seq T.Text)
         !permits_ = parse pf :: Map T.Text Permission
 
     qs <- newMVar quotes_
