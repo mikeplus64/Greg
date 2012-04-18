@@ -9,6 +9,7 @@ import Control.Monad        ((>=>))
 import Control.Concurrent   (takeMVar)
 
 -- | send raw IRC commands
+{-# INLINE send #-}
 send :: Bot -> T.Text -> IO ()
 send = T.hPutStrLn . socket
 
@@ -33,7 +34,6 @@ disconnect bot = do
     ps <- takeMVar (permissions bot)
     writeFile (permFile  (config bot)) (show ps)
     writeFile (quoteFile (config bot)) (show qs)
-    T.hPutStrLn (socket bot) "QUIT"
     hClose (socket bot)
     return bot
 

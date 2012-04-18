@@ -58,8 +58,6 @@ client bot = forever $ do
 monitor :: Bot -> IO ()
 monitor bot = forever $ do
     line <- T.hGetLine (socket bot)
-    T.putStrLn line
- 
     case T.take 4 line of
         "PING" -> send bot $ "PONG " `T.append` T.drop 5 line
         _      -> case parseMessage line bot of

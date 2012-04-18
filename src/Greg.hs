@@ -19,10 +19,7 @@ greg :: String    -- ^ Path to config
 greg path coms msgh = do
     bot <- do
         tmpBot <- createBot path
-        connect tmpBot { 
-                commands   = coms,
-                msgHandler = msgh
-            }
+        connect tmpBot { commands = coms, msgHandler = msgh }
 
     forkIO  (client  bot)
     forever (monitor bot)
